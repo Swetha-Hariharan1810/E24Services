@@ -284,17 +284,103 @@ Then:
 
 ## Driving it from Python locally
 
-`scripts/e24_proxy_client.py` is a command-line client for the same assessment
-API. One thing to get straight before you use it:
+There are two scripts, because there are two different APIs. Picking the wrong
+one produces a 404 on every call, so start here:
 
-> **The Python client does not talk to the Angular app.** It talks to the
-> backend. Starting `ng serve` creates a web page on port 4200 — it does not
-> create an `/api/E24Proxy` endpoint for anything to call.
+| Script | Speaks | Use it when |
+| --- | --- | --- |
+| `scripts/e24_direct_client.py` | Expert24 direct — `/webbuilder/TraversalService/*` | You are set up with the dev-server proxy (the **Use Expert24 Direct APIs** path) |
+| `scripts/e24_proxy_client.py` | Sagility proxy — `/api/E24Proxy/*` | You have the Clinical Content Service running (Mode A) |
 
-So "run it locally and hit it with the script" means running a *backend*
-locally, and pointing the script at that. Two ways:
+Both are standard library only — no `pip install`, Python 3.8+.
 
-**With the mock (nothing else needed).** In one terminal:
+One thing to get straight before either:
+
+> **Neither script talks to the Angular app.** They talk to whatever serves the
+> API. Starting `ng serve` creates a web page on port 4200; on its own it creates
+> no API. What makes `http://localhost:4200` a usable `--base-url` for the direct
+> client is `proxy.config.json` forwarding `/webbuilder` to Expert24.
+
+### The direct client — start, question, QA
+
+Three calls carry an assessment from beginning to end, and each is a subcommand:
+
+| Call | Endpoint | What you get |
+| --- | --- | --- |
+| `start` | `POST /Member` | A traversal id and an Expert24 member id — the two handles every later call needs |
+| `question` | `POST /First` or `POST /Next` | One question at a time |
+| `qa` | `GET /QA/{traversalId}` | Every question and answer recorded for the traversal |
+
+`run` does all three in sequence, which is the one to reach for first:
+
+```bash
+# with ng serve running, from the project root
+./scripts/e24_direct_client.py run --member-id ABC_TMJarrett --algorithm-id 10657
+```
+
+It prompts for each answer. To script it end to end instead, `--auto` takes the
+first option every time:
+
+```bash
+./scripts/e24_direct_client.py run --member-id ABC_TMJarrett --algorithm-id 10657 \
+    --auto --save results.json
+```
+
+The individual calls, for poking at one step:
+
+```bash
+# 1. open a traversal - note the two ids it prints
+./scripts/e24_direct_client.py start --member-id ABC_TMJarrett
+
+# 2. the first question
+./scripts/e24_direct_client.py question \
+    --traversal-id 12345 --e24-member-id 67890 --algorithm-id 10657
+
+# 3. answer node 1 with option 1, and get the next question
+#    (--answer 1 ticks option 1; --answer 1=180 types a value)
+./scripts/e24_direct_client.py question \
+    --traversal-id 12345 --e24-member-id 67890 --algorithm-id 555 \
+    --node-id 1 --answer 1
+
+# 4. read back everything recorded
+./scripts/e24_direct_client.py qa --traversal-id 12345
+```
+
+`--base-url` defaults to `http://localhost:4200`, so with `ng serve` running you
+can leave it out. `-v` prints every request and response on stderr, which is the
+quickest way to see what is actually going over the wire.
+
+Two details taken from the control's source rather than from any spec, because
+they decide whether a run works:
+
+- **Answer keys are Expert24's `Index` values**, with an empty string for a
+  selected radio or checkbox and the typed text for value entry. One radio is
+  `{"1": ""}`, two checkboxes `{"1": "", "2": ""}`, a typed weight `{"1": "180"}`.
+- **The algorithm id is re-read from every response.** Expert24 can move a
+  traversal between algorithms mid-assessment, so sending the one you started
+  with breaks the flow.
+
+### Testing without Expert24
+
+`scripts/mock_e24_proxy.py` serves both APIs, so either script can be exercised
+with no network at all:
+
+```bash
+python3 scripts/mock_e24_proxy.py          # listens on 127.0.0.1:8099
+
+./scripts/e24_direct_client.py run --base-url http://127.0.0.1:8099 \
+    --member-id ABC_TMJarrett --algorithm-id 10657 --auto
+```
+
+It logs every request it receives, which makes it a practical way to compare what
+the script sends against what the control sends.
+
+### The proxy client — when the Clinical Content Service is running
+
+`scripts/e24_proxy_client.py` covers the same ground against the Sagility proxy
+API. It needs a backend to call, which means one of two things:
+
+**The mock (nothing else needed).** In one terminal:
 
 ```bash
 python3 scripts/mock_e24_proxy.py
