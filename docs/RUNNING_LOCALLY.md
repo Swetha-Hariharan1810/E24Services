@@ -135,8 +135,9 @@ Serving the page is the easy part. Getting a real question to appear needs
 something to talk to, because **the questions come from Expert24's cloud, and the
 backend that normally talks to it is not in this repository.**
 
-You have two modes, chosen by the **"Use Expert24 Direct APIs"** checkbox at the
-top left.
+You have three modes. The first two are chosen by the **"Use Expert24 Direct
+APIs"** checkbox at the top left; the third is Mode A pointed at a fake backend
+this repo ships.
 
 ### Mode A — Through the Sagility backend (checkbox OFF, the default)
 
@@ -168,6 +169,24 @@ Be aware of two things:
 - **You are hitting a real shared environment.** Pick the right Expert24 URL for
   what you are doing — authoring, QA, UAT and production each have their own.
 
+### Mode C — Against the bundled mock backend (checkbox OFF)
+
+If you have neither the Clinical Content Service nor Expert24 access, this repo
+ships a stand-in that speaks the same API:
+
+```bash
+python3 scripts/mock_e24_proxy.py
+```
+
+It listens on `http://127.0.0.1:8099` and serves a canned three-question
+assessment. Put that URL in the **Sagility Web Service URL Base** field and press
+Start Assessment — the control cannot tell the difference. It sends permissive
+CORS headers, so the browser will not block it, and it prints every request it
+receives, which makes it a useful way to see exactly what the control sends.
+
+It is a test double. The answers are fixed, nothing is stored, and there is no
+authentication. Do not run it anywhere it could be mistaken for the real thing.
+
 ### What to fill in
 
 The tester ships with working defaults, so you can usually just press **Start
@@ -191,6 +210,90 @@ Then:
   full results — every question and answer, plus alerts, care-plan items and
   recommendations.
 - **Restart Assessment** — tears the control down and rebuilds it from scratch.
+
+---
+
+## Driving it from Python locally
+
+`scripts/e24_proxy_client.py` is a command-line client for the same assessment
+API. One thing to get straight before you use it:
+
+> **The Python client does not talk to the Angular app.** It talks to the
+> backend. Starting `ng serve` creates a web page on port 4200 — it does not
+> create an `/api/E24Proxy` endpoint for anything to call.
+
+So "run it locally and hit it with the script" means running a *backend*
+locally, and pointing the script at that. Two ways:
+
+**With the mock (nothing else needed).** In one terminal:
+
+```bash
+python3 scripts/mock_e24_proxy.py
+```
+
+In another:
+
+```bash
+# Is it reachable? Starts an assessment, fetches question 1, stops.
+./scripts/e24_proxy_client.py smoke \
+    --base-url http://127.0.0.1:8099 \
+    --e24-url  https://aph-uat.expert-24.net \
+    --member-id ABC_TMJarrett --algorithm-id 10657
+
+# Walk the whole assessment in the terminal.
+./scripts/e24_proxy_client.py run \
+    --base-url http://127.0.0.1:8099 \
+    --e24-url  https://aph-uat.expert-24.net \
+    --member-id ABC_TMJarrett --algorithm-id 10657 \
+    --save results.json
+```
+
+**With the real Clinical Content Service.** Identical, but point `--base-url` at
+wherever it is listening — `http://localhost:9991` for a local checkout, or the
+deployed host:
+
+```bash
+./scripts/e24_proxy_client.py smoke \
+    --base-url http://localhost:9991 \
+    --e24-url  https://aph-uat.expert-24.net \
+    --member-id ABC_TMJarrett --algorithm-id 10657
+```
+
+The two URL options are the pair people mix up:
+
+| Option | What it means |
+| --- | --- |
+| `--base-url` | The service **you are calling** — the mock, a local Clinical Content Service, or a deployed one |
+| `--e24-url` | The Expert24 environment that service should **forward to**; sent as the required `expert24urlBase` query parameter |
+
+Both can come from the environment instead, which saves a lot of typing:
+
+```bash
+export E24_BASE_URL=http://127.0.0.1:8099
+export E24_URL_BASE=https://aph-uat.expert-24.net
+export E24_MEMBER_ID=ABC_TMJarrett
+export E24_ALGORITHM_ID=10657
+
+./scripts/e24_proxy_client.py run
+```
+
+Run `./scripts/e24_proxy_client.py --help` for the individual endpoint
+subcommands (`start`, `first`, `next`, `previous`, `continue`, `info`, `qa`,
+`begin-continue`), which are useful for poking at one call at a time.
+
+### Running the UI and the script against the same backend
+
+They are two clients of one service, so nothing stops you doing both at once:
+
+```
+  ng serve        →  http://localhost:4200   ─┐
+                                              ├─→  http://127.0.0.1:8099   →  Expert24
+  e24_proxy_client.py                        ─┘      (mock, or the real service)
+```
+
+Start the backend first, then the tester, then the script. With the mock running
+in the foreground you will see both clients' requests appear in its log, which is
+the quickest way to compare what the control sends against what the script sends.
 
 ---
 
@@ -226,6 +329,12 @@ stop it, or pick another port:
 npx ng serve --port 4300
 ```
 
+**The Python client reports `HTTP 404` or `no such route`**
+`--base-url` is pointing at something that is not the proxy service — commonly
+the Angular dev server on port 4200, which serves a web page and has no API.
+Point it at the backend: `http://127.0.0.1:8099` for the bundled mock, or
+wherever the Clinical Content Service is listening.
+
 **A red error banner in the tester**
 The control could not reach its backend. Check which mode the checkbox is in, and
 that the matching URL field points somewhere that is actually running.
@@ -256,6 +365,16 @@ npx ng build assessment-ctrl-tester
 
 # run it → http://localhost:4200/
 npx ng serve
+```
+
+```bash
+# a fake backend, so the UI and the Python client have something to call
+python3 scripts/mock_e24_proxy.py
+
+# check the backend from the command line
+./scripts/e24_proxy_client.py smoke --base-url http://127.0.0.1:8099 \
+    --e24-url https://aph-uat.expert-24.net \
+    --member-id ABC_TMJarrett --algorithm-id 10657
 ```
 
 Shortcut scripts already defined in `package.json`:
