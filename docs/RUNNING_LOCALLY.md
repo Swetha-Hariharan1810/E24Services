@@ -3,6 +3,12 @@
 A step-by-step guide in plain language. Every command below was run on a clean
 checkout and confirmed to work.
 
+If you are here because something is not working, or you want to understand *why*
+the setup is shaped the way it is, jump to
+[The road to a working page](#the-road-to-a-working-page--what-happened-and-why).
+It walks through each obstacle hit getting a real question on screen, what caused
+it, and what fixed it.
+
 ---
 
 ## What you are about to run
@@ -360,6 +366,186 @@ the quickest way to compare what the control sends against what the script sends
 
 ---
 
+## The road to a working page — what happened and why
+
+The four steps at the top are the happy path. In practice getting a real question
+on screen ran into four separate obstacles, and none of them was obvious from the
+error message alone. This section is the record of what each one was, why it
+happened, and what fixed it — so the next person does not have to rediscover any
+of it.
+
+### 1. `ng: Permission denied`
+
+```
+$ npx ng build assessment-ctrl --configuration production
+sh: 1: ng: Permission denied
+```
+
+**What it was.** Not an Angular problem at all. `npx` found the CLI; the operating
+system refused to execute it. `node_modules/.bin/ng` is a symlink to a script that
+needs its execute bit set, and that bit was missing.
+
+**Why it is worth understanding.** The build was being run as `root`, and it still
+failed. That is the giveaway. `root` bypasses read and write permissions, but *not*
+execute — if a file has no execute bit at all, even `root` gets "Permission
+denied". So the cause was the file's mode, not who owned it. Modes get lost when
+`node_modules` is copied between machines, unzipped from an archive, or installed
+by a different user than the one running the build.
+
+**The fix.** Either restore the bit:
+
+```bash
+chmod +x node_modules/.bin/*
+```
+
+or bypass the question entirely by letting `node` read the script instead of
+asking the kernel to execute it:
+
+```bash
+node node_modules/@angular/cli/bin/ng.js build assessment-ctrl --configuration production
+```
+
+The second form also works on a disk mounted `noexec`, where `chmod` cannot help.
+
+### 2. The page loaded, but no questions appeared
+
+`ng serve` worked. The form rendered. **Start Assessment** produced a red banner.
+
+**What it was.** Nothing was broken. The control was correctly reporting that it
+could not reach its backend.
+
+**Why.** The questions live in Expert24's cloud, and the control does not normally
+call Expert24 itself — it calls the Sagility **Clinical Content Service**, which
+forwards the request. That service is **not in this repository**. By default the
+control looks for it at `http://localhost:9991`, where nothing was listening.
+
+There are three moving parts, not two, and this repository is only the first:
+
+```
+  this repository            a different repository        a third-party service
+  localhost:4200      →      localhost:9991          →     aph-uat.expert-24.net
+  (the page)                 (Clinical Content             (Expert24)
+                              Service)
+```
+
+That missing middle box is the root cause of everything that follows.
+
+### 3. Direct mode failed with `status: 0`
+
+The **"Use Expert24 Direct APIs"** checkbox exists to skip the missing middle box
+and call Expert24 straight from the browser. It produced:
+
+```json
+{ "status": 0, "statusText": "Unknown Error",
+  "url": "https://aph-uat.expert-24.net/webbuilder/TraversalService/Member" }
+```
+
+**What `status: 0` means.** The browser received *no response at all*. Not a 404,
+not a 500 — nothing. Angular has nothing to report, so it reports zero. On its own
+this is ambiguous: it can mean CORS, a network failure, or a TLS failure. The
+browser **Console** tab is what distinguishes them, and it said:
+
+```
+Access to XMLHttpRequest at 'https://aph-uat.expert-24.net/webbuilder/TraversalService/Member'
+from origin 'http://localhost:4200' has been blocked by CORS policy:
+Response to preflight request doesn't pass access control check: It does not have HTTP ok status.
+```
+
+**Why.** Because the control sends `Content-Type: application/json`, the browser
+will not send the POST straight away. It first sends a quiet `OPTIONS` request
+asking Expert24 "is this origin allowed?" — the *preflight*. Expert24 answered it
+with a non-OK status, so the browser stopped there. **The real request was never
+sent.** Expert24 has no record of the attempt.
+
+**Why it could not be fixed in code.** The control built the right URL and made
+the right call. CORS is enforced by the browser on instructions from Expert24's
+server, and this project controls neither. A clinical platform declining to accept
+calls from arbitrary browser origins is normal and deliberate — it expects to be
+called by a *server*. This is precisely why the Clinical Content Service exists.
+
+### 4. The fix: stop making a cross-origin request
+
+The obstacle is not "calling Expert24". It is "calling Expert24 **from a browser
+page on a different origin**". Remove the second half and the problem disappears.
+
+`proxy.config.json` tells the dev server to forward anything under `/webbuilder`
+to Expert24, and `angular.json` references it so plain `ng serve` picks it up.
+Setting **Expert24 URL Base** to `http://localhost:4200` then makes the control
+call its own origin:
+
+```
+  browser                     ng serve                      Expert24
+  localhost:4200    ──────→   localhost:4200      ──────→   aph-uat.expert-24.net
+                    same           (proxy)          server-to-server,
+                    origin:                          CORS does not apply
+                    no preflight,
+                    no CORS check
+```
+
+Same-origin requests get no preflight and no CORS check — there is nothing left to
+block. The dev server then relays the call server-to-server, where CORS has no
+meaning at all.
+
+Both halves are required. The checkbox alone changes nothing; the URL field is
+what actually moves the request on-origin. That field is the step most easily
+forgotten.
+
+### 5. `Proxy configuration file ... does not exist`
+
+```
+An unhandled exception occurred: Proxy configuration file
+/home/azureuser/PCA/MSAT/AssessmentControl/proxy.config.json does not exist.
+```
+
+— while `ls` plainly showed `proxy.config.json` sitting there.
+
+**What it was.** The filename carried an invisible `U+200E` (left-to-right mark)
+in front of it, so the real name was `<U+200E>proxy.config.json`, which is a different
+file as far as the filesystem is concerned. Characters like this ride along
+silently when a filename is copied out of a browser or a chat window.
+
+**How to see it.** `ls` renders it as nothing at all. `ls -b` escapes it:
+
+```bash
+$ ls -b | grep proxy
+\342\200\216proxy.config.json
+```
+
+**The fix.** Delete the impostor and write a clean file:
+
+```bash
+find . -maxdepth 1 -name '*proxy.config.json' -print -delete
+```
+
+Worth remembering generally: when a file "exists" but a tool insists it does not,
+`ls -b` is the command that settles it.
+
+### Where that leaves things
+
+The working local recipe, start to finish:
+
+```bash
+npm install                                          # once
+npx ng build assessment-ctrl --configuration production
+npx ng serve                                         # picks up proxy.config.json
+```
+
+then in the browser: tick **Use Expert24 Direct APIs**, set **Expert24 URL Base**
+to `http://localhost:4200`, press **Start Assessment**.
+
+Two things remain true and are worth stating plainly:
+
+- **This is a development arrangement, not a deployment one.** It works because
+  `ng serve` is running and can forward requests. A built application has no dev
+  server, so a deployed copy of the tester will hit exactly the CORS wall
+  described in step 3.
+- **The real answer is still the Clinical Content Service.** The dev-server proxy
+  is standing in for it — badly, and only on one machine. For anything beyond
+  local development, that service needs to be running or deployed somewhere the
+  control can reach.
+
+---
+
 ## When things go wrong
 
 **`sh: 1: ng: Permission denied`**
@@ -381,6 +567,15 @@ who will run the build:
 rm -rf node_modules package-lock.json
 npm install
 ```
+
+**"Proxy configuration file ... does not exist" — but the file is right there**
+The filename almost certainly carries an invisible character (a left-to-right
+mark, for instance), picked up when it was copied from a browser or chat window.
+`ls` shows nothing unusual; `ls -b` escapes it. Delete and rewrite the file:
+```bash
+find . -maxdepth 1 -name '*proxy.config.json' -print -delete
+```
+Then recreate it with the contents shown above, or `git checkout -- proxy.config.json`.
 
 **"Cannot find module 'assessment-ctrl'"**
 Step 2 was skipped or failed. Build the library, then try again.
