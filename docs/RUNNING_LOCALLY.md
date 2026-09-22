@@ -165,9 +165,72 @@ Be aware of two things:
   `localhost:4200` to a different domain. Unless Expert24 returns permissive CORS
   headers for your origin, the browser will refuse the request and you will see a
   CORS error in the browser console. This is exactly the problem the proxy exists
-  to solve.
+  to solve — see the dev-server workaround below, which gets Mode B working on a
+  development machine.
 - **You are hitting a real shared environment.** Pick the right Expert24 URL for
   what you are doing — authoring, QA, UAT and production each have their own.
+
+### Making Mode B work locally (the dev-server proxy)
+
+Mode B on its own usually fails. The browser sends a preflight `OPTIONS` request
+first, Expert24 does not answer it with an OK status, and the browser refuses to
+send the real request. The console says:
+
+```
+Access to XMLHttpRequest at 'https://aph-uat.expert-24.net/webbuilder/TraversalService/Member'
+from origin 'http://localhost:4200' has been blocked by CORS policy:
+Response to preflight request doesn't pass access control check: It does not have HTTP ok status.
+```
+
+Angular reports that as `status: 0`, "Unknown Error" — there is no response to
+report, because nothing came back.
+
+The fix is to stop making a cross-origin request at all. `proxy.config.json` in
+the project root tells the dev server to forward anything under `/webbuilder` to
+Expert24:
+
+```json
+{
+  "/webbuilder": {
+    "target": "https://aph-uat.expert-24.net",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}
+```
+
+It is already wired into `angular.json`, so plain `ng serve` picks it up. Two
+steps to use it:
+
+1. Tick **Use Expert24 Direct APIs**.
+2. Change **Expert24 URL Base** from `https://aph-uat.expert-24.net` to
+   **`http://localhost:4200`**.
+
+Step 2 is the one that matters and the one that is easy to forget. The control
+now calls `http://localhost:4200/webbuilder/...` — the same origin as the page —
+so the browser sends no preflight and applies no CORS check. The dev server
+forwards the call to Expert24 server-to-server, where CORS does not exist.
+
+```
+  browser                     ng serve                      Expert24
+  localhost:4200    ──────→   localhost:4200      ──────→   aph-uat.expert-24.net
+                    same           (proxy)          server-to-server,
+                    origin,                          no CORS involved
+                    no CORS
+```
+
+Worth being clear about the limits:
+
+- **It only works under `ng serve`.** A built application has no dev server to
+  forward through. This is a development convenience, not a deployment strategy.
+- **It removes CORS, not every obstacle.** If Expert24 also wants
+  authentication, or the machine cannot reach that host, you will now get a real
+  HTTP status or a connection error instead — which is more useful, because it
+  tells you what to fix next.
+- **Changing the Expert24 environment means editing the `target`** in
+  `proxy.config.json` and restarting `ng serve`. The URL field in the form now
+  points at localhost, so it no longer selects the environment.
 
 ### Mode C — Against the bundled mock backend (checkbox OFF)
 
