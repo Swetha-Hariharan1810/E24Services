@@ -1,0 +1,186 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "assessment-ctrl": {
+      "projectType": "library",
+      "root": "projects/assessment-ctrl",
+      "sourceRoot": "projects/assessment-ctrl/src",
+      "prefix": "assmnt",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "tsConfig": "projects/assessment-ctrl/tsconfig.lib.json",
+            "project": "projects/assessment-ctrl/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/assessment-ctrl/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/assessment-ctrl/src/test.ts",
+            "tsConfig": "projects/assessment-ctrl/tsconfig.spec.json",
+            "karmaConfig": "projects/assessment-ctrl/karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/assessment-ctrl/tsconfig.lib.json",
+              "projects/assessment-ctrl/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    },
+    "assessment-ctrl-tester": {
+      "projectType": "application",
+      "schematics": {},
+      "root": "projects/assessment-ctrl-tester",
+      "sourceRoot": "projects/assessment-ctrl-tester/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/assessment-ctrl-tester",
+            "index": "projects/assessment-ctrl-tester/src/index.html",
+            "main": "projects/assessment-ctrl-tester/src/main.ts",
+            "polyfills": "projects/assessment-ctrl-tester/src/polyfills.ts",
+            "tsConfig": "projects/assessment-ctrl-tester/tsconfig.app.json",
+            "aot": true,
+            "assets": [
+              "projects/assessment-ctrl-tester/src/favicon.ico",
+              "projects/assessment-ctrl-tester/src/assets"
+            ],
+            "styles": [
+                "node_modules/primeflex/primeflex.css",
+                "node_modules/primeicons/primeicons.css",
+                "node_modules/font-awesome/css/font-awesome.min.css",
+                "node_modules/nanoscroller/bin/css/nanoscroller.css",
+                "node_modules/animate.css/animate.css",
+
+                "projects/assessment-ctrl-tester/src/styles.css"
+            ],
+            "scripts": [
+                "node_modules/jquery/dist/jquery.js",
+                "node_modules/nanoscroller/bin/javascripts/jquery.nanoscroller.js"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "projects/assessment-ctrl-tester/src/environments/environment.ts",
+                  "with": "projects/assessment-ctrl-tester/src/environments/environment.prod.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": true,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb",
+                  "maximumError": "10kb"
+                }
+              ]
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          }
+        },
+        "serve": {
+            "builder": "@angular-devkit/build-angular:dev-server",
+            "options": {
+              "buildTarget": "assessment-ctrl-tester:build"
+            },
+            "configurations": {
+              "production": {
+                "buildTarget": "assessment-ctrl-tester:build:production"
+              },
+              "development": {
+                "buildTarget": "assessment-ctrl-tester:build:development"
+              }
+            },
+            "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "buildTarget": "assessment-ctrl-tester:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/assessment-ctrl-tester/src/test.ts",
+            "polyfills": "projects/assessment-ctrl-tester/src/polyfills.ts",
+            "tsConfig": "projects/assessment-ctrl-tester/tsconfig.spec.json",
+            "karmaConfig": "projects/assessment-ctrl-tester/karma.conf.js",
+            "assets": [
+              "projects/assessment-ctrl-tester/src/favicon.ico",
+              "projects/assessment-ctrl-tester/src/assets"
+            ],
+            "styles": [
+              "projects/assessment-ctrl-tester/src/styles.css"
+            ],
+            "scripts": []
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/assessment-ctrl-tester/tsconfig.app.json",
+              "projects/assessment-ctrl-tester/tsconfig.spec.json",
+              "projects/assessment-ctrl-tester/e2e/tsconfig.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        },
+        "e2e": {
+          "builder": "@angular-devkit/build-angular:protractor",
+          "options": {
+            "protractorConfig": "projects/assessment-ctrl-tester/e2e/protractor.conf.js",
+            "devServerTarget": "assessment-ctrl-tester:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "assessment-ctrl-tester:serve:production"
+            }
+          }
+        }
+      }
+    }},
+  "cli": {
+    "analytics": false
+  }
+}
