@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.8"
+# dependencies = []
+# ///
 """Drive Expert24's TraversalService directly: start, question, QA.
 
 This is the *direct* Expert24 API (`/webbuilder/TraversalService/...`), which is

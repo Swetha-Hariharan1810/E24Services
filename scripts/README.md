@@ -5,6 +5,8 @@ useful for checking a deployment is alive, walking an assessment end to end, or
 seeing exactly what the control sends.
 
 All three are **standard library only**. No `pip install`. Python 3.8 or newer.
+For a pinned interpreter and a reproducible environment, see
+[Setting up with uv](#setting-up-with-uv) below.
 
 | Script | Speaks | Use it when |
 | --- | --- | --- |
@@ -20,6 +22,66 @@ you are on the direct path.
 > API. `ng serve` creates a web page on port 4200; on its own it creates no API.
 > What makes `http://localhost:4200` a usable `--base-url` is `proxy.config.json`
 > forwarding `/webbuilder` to Expert24.
+
+---
+
+## Setting up with uv
+
+The scripts import only the standard library, so a virtual environment is not
+strictly required — `python3 scripts/e24_direct_client.py ...` works as-is. What
+uv buys you is a **pinned interpreter** and the same environment on every machine,
+which matters when the system Python is old or varies between boxes.
+
+If uv is not installed:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Then, from the project root:
+
+```bash
+uv venv          # creates .venv with an interpreter satisfying requires-python
+uv sync          # resolves the (empty) dependency set
+```
+
+`uv sync` prints `Resolved 1 package` and finishes in milliseconds — there is
+nothing to download, because there are no dependencies.
+
+### Three ways to run, all equivalent
+
+**1. `uv run` — no activation needed.** The one to use:
+
+```bash
+uv run scripts/e24_direct_client.py run --member-id ABC_TMJarrett --algorithm-id 10657
+```
+
+**2. Activate the venv**, if you prefer a shell you stay in:
+
+```bash
+source .venv/bin/activate
+python scripts/e24_direct_client.py start --member-id ABC_TMJarrett
+deactivate
+```
+
+**3. `uv run --script` — from anywhere, no project needed.** Each script carries
+its own inline metadata (PEP 723), so uv builds a throwaway environment for it:
+
+```bash
+uv run --script /path/to/scripts/e24_direct_client.py qa --traversal-id T-1
+```
+
+Useful for copying a single script onto a machine that has nothing else set up.
+
+### What is in the repo for this
+
+| File | Why |
+| --- | --- |
+| `pyproject.toml` | Pins `requires-python` and anchors the uv project. `package = false` — nothing is built or installed, these are only scripts. |
+| `uv.lock` | Committed so everyone resolves identically. It is nearly empty, by design. |
+| `# /// script` header in each script | PEP 723 metadata, so each file also runs standalone under `uv run --script`. |
+
+`.venv/` is gitignored — create your own, do not commit one.
 
 ---
 

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.8"
+# dependencies = []
+# ///
 """A local stand-in for the deployed `api/E24Proxy` service.
 
 WHY THIS EXISTS

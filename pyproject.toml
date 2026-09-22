@@ -1,0 +1,22 @@
+# Python tooling for the helper scripts in scripts/ only.
+#
+# This repository is an Angular workspace; nothing here is built or published as
+# a Python package. The file exists so `uv` has a project to anchor to, which
+# pins the interpreter version and gives everyone the same environment:
+#
+#     uv venv
+#     uv run scripts/e24_direct_client.py run --member-id ... --algorithm-id ...
+#
+# The scripts import only the standard library, so there are no dependencies to
+# resolve and never will be unless one is added here deliberately.
+
+[project]
+name = "e24-scripts"
+version = "0.1.0"
+description = "Command-line clients for the assessment API"
+requires-python = ">=3.8"
+dependencies = []
+
+[tool.uv]
+# Not a package: there is nothing to build or install, only scripts to run.
+package = false
