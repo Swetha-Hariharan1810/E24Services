@@ -1,0 +1,58 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import './assets/theme/theme.css';
+
+:root {
+    --font-family: Verdana, Geneva, sans-serif;
+    --p-font-family: Verdana, Geneva, sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+}
+
+.p-checkbox-label {
+    line-height: 2!important;
+}
+
+/* Note: the spinner is on a deprecation path in PrimeNg. Updating style to work in PrimeNg 10 theme */
+.ui-spinner-button {
+    overflow: visible!important;
+    padding: .2rem .5rem!important;
+    width: 1.5em!important;
+    height: 48%;
+    background: var(--primary-color);
+    color: #ffffff;
+    font-size: .5rem;
+    border-top: 0;
+    border-bottom: 0;
+    border-right: 0;
+    border-left: 1px solid gray;
+    border-radius: 4px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.ui-spinner-input {
+    padding-right: 1.5em;
+    padding: .2em 1em;
+    vertical-align: middle;
+    border: 1px solid gray;
+    border-radius: 4px;
+}
+
+.ui-spinner-up {
+    margin-top: 1px!important;
+}
+
+.item-is-required {
+    color: #e32;
+    font-style: italic !important;
+    font-weight: bold !important;
+}
+
+.item-is-required:after {
+    color: #e32;
+    content: ' *';
+    display: inline;
+}

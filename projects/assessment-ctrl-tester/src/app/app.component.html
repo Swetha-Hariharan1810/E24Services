@@ -1,0 +1,120 @@
+<div id="assessmentTester">
+    <div class="tester-title">
+        Standalone Assessment Control Tester
+    </div>
+
+    <div class="tester-layout">
+        <div class="left-pane">
+            <div class="assessment-error" *ngIf="errorMessage">
+                {{errorMessage}}
+            </div>
+
+            <div class="controls-grid p-grid">
+                <div class="p-col-12">
+                    <div class="tester-checkbox-row">
+                        <p-checkbox inputId="useE24ProxyApi" binary="true"
+                            [(ngModel)]="useE24ProxyApi" (onChange)="onUseE24ProxyApiChanged()">
+                        </p-checkbox>
+                        <label for="useE24ProxyApi" class="tester-checkbox-label">Use Expert24 Direct APIs</label>
+                    </div>
+                </div>
+
+                <div class="p-col-12">
+                    <div *ngIf="!useE24ProxyApi">
+                        <span class="tester-label">Sagility Web Service URL Base</span>
+                        <input pInputText id="webserviceUrlBase" type="text" [(ngModel)]="webserviceUrlBase" (ngModelChange)="onWebserviceUrlBaseChanged()" style="width: 100%;"/>
+                    </div>
+                </div>
+                <div class="p-col-12">
+                    <div>
+                        <span class="tester-label">Expert24 URL Base</span>
+                        <input pInputText id="e24UrlBase" type="text" [(ngModel)]="e24UrlBase" (ngModelChange)="onE24UrlBaseChanged()" style="width: 100%;"/>
+                    </div>
+                </div>
+                <div class="p-col-12 p-md-6">
+                    <div>
+                        <span class="tester-label">Member Id</span>
+                        <input pInputText id="memberId" type="text" [(ngModel)]="memberId"  style="width: 100%;"/>
+                    </div>
+                </div>
+                <div class="p-col-12 p-md-6">
+                    <div>
+                        <span class="tester-label">Language</span>
+                        <p-dropdown id="language" [options]="languageOptions" [style]="{'width':'100%'}" [(ngModel)]="language"></p-dropdown>
+                    </div>
+                </div>
+                <div class="p-col-12">
+                    <div>
+                        <span class="tester-label">E24 Assessment ID</span>
+                        <p-dropdown id="assessmentAlgorithmId" [options]="assessmentOptions" [style]="{'width':'100%'}" scrollHeight="400px" [(ngModel)]="assessmentAlgorithmId" (onChange)="setAssessmentName($event)"></p-dropdown>
+                    </div>
+                </div>
+                <div class="p-col-12 p-md-6">
+                    <div>
+                        <span class="tester-label">E24 Traversal ID (for Continue)</span>
+                        <input pInputText id="e24TraversalId" type="text" [(ngModel)]="e24TraversalId" style="width: 100%;"/>
+                    </div>
+                </div>
+                <div class="p-col-12 p-md-6">
+                    <div>
+                        <span class="tester-label">E24 Member ID (for Continue)</span>
+                        <input pInputText id="e24MemberId" type="text" [(ngModel)]="e24MemberId" style="width: 100%;"/>
+                    </div>
+                </div>
+                <div class="p-col-12">
+                    <div>
+                        <span class="tester-label">Text to display upon completion</span>
+                        <input pInputText id="assessmentCompletedLabel" type="text" [(ngModel)]="assessmentCompletedLabel" style="width: 100%;"/>
+                    </div>
+                </div>
+                <div class="p-col-12">
+                    <div>
+                        <span class="tester-label">Assessment Start Data (prepop)</span>
+                        <textarea pInputTextarea rows="6" [attr.id]="assessmentStartData" [(ngModel)]="assessmentStartData"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button pButton type="button" (click)="loadAssessment()" label="Start Assessment" class="p-button-sm"></button>
+                <button pButton type="button" (click)="reloadAssessment()" label="Restart Assessment" class="p-button-sm"></button>
+            </div>
+        </div>
+
+        <div class="right-pane">
+            <div class="completion-json" *ngIf="showAssessment">
+                <span class="tester-label">Assessment Questions</span>
+            
+                <div class="assessment-wrapper">                
+                    <assmnt-assessment-ctrl style="width: 100%;"
+                        [webserviceUrlBase]="webserviceUrlBase" 
+                        [e24UrlBase]="e24UrlBase"
+                        [useE24ProxyApi]="useE24ProxyApi"
+                        [memberId]="memberId" 
+                        [language]="language"
+                                
+                        [assessmentAlgorithmId]="assessmentAlgorithmId" 
+                        [assessmentName]="assessmentName" 
+                        [assessmentStartPrepop]="assessmentStartDataClean"
+                        [assessmentCompletedLabel]="assessmentCompletedLabel"
+                        [showAssessmentCompletedLabel] = "showAssessmentCompletedLabel"
+                        [e24TraversalId]="e24TraversalId"
+                        [e24MemberId] = "e24MemberId"
+
+                        (assessmentErrorOccurred)="assessmentErrorOccurred($event)"
+                        (assessmentIsComplete)="assessmentIsComplete($event)">
+                    </assmnt-assessment-ctrl>                
+                </div>
+            </div>
+
+            <div class="completion-json" *ngIf="assessmentCompleteJson">
+                <span class="tester-label">Assessment Completion JSON</span>
+                <textarea pInputTextarea [value]="assessmentCompleteJson" rows="21" readonly style="width: 100%;"></textarea>
+            </div>
+
+            <div class="assessment-placeholder" *ngIf="!showAssessment">
+                Configure values on the left and select Start Assessment.
+            </div>
+        </div>
+    </div>
+</div>

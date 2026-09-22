@@ -1,0 +1,176 @@
+/*!
+ * Bootstrap v3.3.7 (http://getbootstrap.com)
+ * Copyright 2011-2017 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ */
+
+
+/*!
+ * Generated using the Bootstrap Customizer (https://getbootstrap.com/docs/3.3/customize/?id=f3e6a00c330ddfef077aa1d3e56fa173)
+ * Config saved to config.json and https://gist.github.com/f3e6a00c330ddfef077aa1d3e56fa173
+ */
+
+
+/*!
+ * Bootstrap v3.3.7 (http://getbootstrap.com)
+ * Copyright 2011-2016 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ */
+
+
+/*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */
+
+.bs-tooltip {
+    position: absolute;
+    z-index: 1070;
+    display: block;
+    font-family: Arial, Verdana, sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: normal;
+    line-break: auto;
+    line-height: 1.6;
+    text-align: left;
+    text-align: start;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    white-space: normal;
+    word-break: normal;
+    word-spacing: normal;
+    word-wrap: normal;
+    font-size: 12px;
+    opacity: 0;
+    filter: alpha(opacity=0);    
+}
+
+.bs-tooltip.in {
+    opacity: 1.0;
+    filter: alpha(opacity=90);
+}
+
+.bs-tooltip.top {
+    margin-top: -3px;
+    padding: 5px 0;
+}
+
+.bs-tooltip.right {
+    margin-left: 3px;
+    padding: 0 5px;
+}
+
+.bs-tooltip.bottom {
+    margin-top: 3px;
+    padding: 5px 0;
+}
+
+.bs-tooltip.left {
+    margin-left: -3px;
+    padding: 0 5px;
+}
+
+.bs-tooltip-inner {
+    max-width: 400px;
+    width: 300px;
+    text-align: left;
+    padding:3px 8px;
+    color:#314A5B;
+    -webkit-border-radius:3px;
+    -moz-border-radius:3px;
+    border-radius:8px;
+    border: 1px solid #507a95;
+    background-color: rgb(248, 250, 250);
+}
+
+.bs-tooltip-arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-color: transparent;
+    border-style: solid;
+}
+
+.bs-tooltip.top .bs-tooltip-arrow {
+    bottom: 0;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px 5px 0;
+    border-top-color: #507a95;
+}
+
+.bs-tooltip.top-left .bs-tooltip-arrow {
+    bottom: 0;
+    right: 5px;
+    margin-bottom: -5px;
+    border-width: 5px 5px 0;
+    border-top-color: #507a95;
+}
+
+.bs-tooltip.top-right .bs-tooltip-arrow {
+    bottom: 0;
+    left: 5px;
+    margin-bottom: -5px;
+    border-width: 5px 5px 0;
+    border-top-color: #507a95;
+}
+
+.bs-tooltip.right .bs-tooltip-arrow {
+    top: 50%;
+    left: 0;
+    margin-top: -5px;
+    border-width: 5px 5px 5px 0;
+    border-right-color: #507a95;
+}
+
+.bs-tooltip.left .bs-tooltip-arrow {
+    top: 50%;
+    right: 0;
+    margin-top: -5px;
+    border-width: 5px 0 5px 5px;
+    border-left-color: #507a95;
+}
+
+.bs-tooltip.bottom .bs-tooltip-arrow {
+    top: 0;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 0 5px 5px;
+    border-bottom-color: #507a95;
+}
+
+.bs-tooltip.bottom-left .bs-tooltip-arrow {
+    top: 0;
+    right: 5px;
+    margin-top: -5px;
+    border-width: 0 5px 5px;
+    border-bottom-color: #507a95;
+}
+
+.bs-tooltip.bottom-right .bs-tooltip-arrow {
+    top: 0;
+    left: 5px;
+    margin-top: -5px;
+    border-width: 0 5px 5px;
+    border-bottom-color: #507a95;
+}
+
+
+
+/* AXIS specific tooltip css */
+
+.tooltip-header {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding: 5px;
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.tooltip-table {
+    border-collapse: collapse;
+}
+
+.tooltip-table-td {
+    border: 0px !important;
+}
+
