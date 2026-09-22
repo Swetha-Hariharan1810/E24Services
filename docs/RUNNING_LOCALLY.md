@@ -292,7 +292,9 @@ one produces a 404 on every call, so start here:
 | `scripts/e24_direct_client.py` | Expert24 direct — `/webbuilder/TraversalService/*` | You are set up with the dev-server proxy (the **Use Expert24 Direct APIs** path) |
 | `scripts/e24_proxy_client.py` | Sagility proxy — `/api/E24Proxy/*` | You have the Clinical Content Service running (Mode A) |
 
-Both are standard library only — no `pip install`, Python 3.8+.
+Both are standard library only — no `pip install`, Python 3.8+. There is a
+reference for them at [`../scripts/README.md`](../scripts/README.md), including
+what a successful run of each command looks like.
 
 One thing to get straight before either:
 
