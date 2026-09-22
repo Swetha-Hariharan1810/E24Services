@@ -261,6 +261,57 @@ server rather than your laptop:
 
 ---
 
+# Verifying a deployment from the command line
+
+`scripts/e24_proxy_client.py` is a standalone Python client for the deployed
+proxy API. It implements all eight `api/E24Proxy` endpoints from the
+"Assessment Expert24 Proxy Integration" spec, so you can confirm a deployment
+works without opening a browser or building an Angular app.
+
+Standard library only - no `pip install`, Python 3.8+.
+
+**Is the deployment alive?**
+
+```bash
+scripts/e24_proxy_client.py smoke \
+    --base-url https://content-svc.example.com \
+    --e24-url  https://aph-uat.expert-24.net \
+    --member-id ABC_TMJarrett \
+    --algorithm-id 10657
+```
+
+It starts an assessment, fetches the first question and prints it. If that
+works, the service, its Expert24 connection and your member id are all good.
+
+**Walk through a whole assessment in the terminal:**
+
+```bash
+scripts/e24_proxy_client.py run \
+    --base-url https://content-svc.example.com \
+    --e24-url  https://aph-uat.expert-24.net \
+    --member-id ABC_TMJarrett \
+    --algorithm-id 10657 \
+    --prepop-file prepop.json \
+    --save results.json
+```
+
+**Call one endpoint at a time** - `start`, `begin-continue`, `continue`,
+`first`, `next`, `previous`, `info`, `qa` are each a subcommand. Add `--raw`
+for the unformatted JSON, `-v` to see each URL, `--insecure` for internal hosts
+with a self-signed certificate.
+
+The two URL options are the ones people mix up: `--base-url` is the Clinical
+Content Service you are calling, `--e24-url` is the Expert24 environment it
+forwards to (sent as the required `expert24urlBase` query parameter).
+
+Settings can come from the environment instead: `E24_BASE_URL`, `E24_URL_BASE`,
+`E24_MEMBER_ID`, `E24_ALGORITHM_ID`, `E24_LANGUAGE`.
+
+Run `scripts/e24_proxy_client.py --help`, or `<subcommand> --help`, for
+everything else.
+
+---
+
 ## Things worth knowing before you deploy
 
 **Source maps are switched on in production builds.**
