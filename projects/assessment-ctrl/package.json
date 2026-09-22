@@ -1,0 +1,11 @@
+{
+  "name": "assessment-ctrl",
+  "version": "2.0.1",
+  "peerDependencies": {
+    "@angular/common": "^18.0.0",
+    "@angular/core": "^18.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.0.0"
+  }
+}

@@ -1,0 +1,210 @@
+/* assessment css */
+
+#assessmentBody {
+  font-family: var(--font-family, Verdana, Geneva, sans-serif);
+  font-size: var(--font-size);
+}
+
+#assessmentPanel .p-col-1, #assessmentPanel .p-col-2, #assessmentPanel .p-col-3, #assessmentPanel 
+#assessmentPanel .p-col-4, #assessmentPanel .p-col-5, #assessmentPanel .p-col-6, #assessmentPanel 
+#assessmentPanel .p-col-7, #assessmentPanel .p-col-8, #assessmentPanel .p-col-9, #assessmentPanel 
+#assessmentPanel .p-col-10, #assessmentPanel .p-col-11, #assessmentPanel .p-col-12 {
+    padding: 0;
+}
+
+#assessmentPanel .assessment-complete {
+  padding: 1.5em;
+  font-weight: bold;
+}
+
+#assessmentPanel .ui-button-container {
+  width: 100%;
+  padding: 10px 0px 10px 0px;
+}
+
+#assessmentPanel .ui-button-container button {
+  margin: 0px 5px 0px 5px;
+}
+
+#assessmentPanel .separator {
+  margin-left: -10px;
+  margin-right: -10px;
+}
+
+#assessmentPanel .question-body {
+  min-height: 150px;
+}
+
+#assessmentPanel .left-menu-container {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  -webkit-border-radius: 5px;
+}
+
+#assessmentPanel .question-answer-container {
+  padding-left: 20px;
+}
+
+#assessmentPanel .menu-side-border {
+  color: var(--text-color);
+  line-height: 23px;
+  padding: 5px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#assessmentPanel div[class*="menu-side-border"]:not(:last-of-type) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+#assessmentPanel .general-assessment-left-menu {
+  font-weight: bold;
+  font-size: 16px;
+  color: var(--hot-link-color);
+  font-variant: small-caps;
+  text-align: right;
+  background-color: var(--background-color) !important;
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -ms-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+#assessmentPanel .general-assessment-left-menu:hover {
+  background-color: var(--background-color);
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+}
+
+#assessmentPanel .general-assessment-button-container {
+  width: 100%;
+  padding: 10px 0px 10px 0px;
+}
+
+#assessmentPanel .general-assessment-button-container button {
+  margin: 0px 5px 0px 5px;
+}
+
+#assessmentPanel .display-skill-set img {
+  float: right;
+}
+
+#assessmentPanel .ui-check {
+  float: right;
+  padding-top: 5px;
+}
+
+#assessmentPanel .answer-text {
+  color: grey;
+  padding-top: .4em;
+  margin-bottom: 1.2em;
+}
+
+#assessmentPanel .assessment-container {
+  line-height: 1.5;
+}
+
+#assessmentPanel .general-assessment-question {
+  line-height: 1.5;
+  padding-bottom: .8em;
+}
+
+#assessmentPanel .icon-shift {
+  margin-left: 6px;
+}
+
+#assessmentPanel .displayHelpText {
+  line-height: 1.5em;
+  overflow-y: scroll !important;
+}
+
+#assessmentPanel .ui-dialog {
+  -webkit-box-shadow: 0px 0px 8px 2px #282828;
+  -moz-box-shadow: 0px 0px 8px 2px #282828;
+  box-shadow: 0px 0px 8px 2px #282828;
+}
+
+#assessmentPanel .duplicateError .ui-dialog .ui-dialog-titlebar-close span {
+  display: none !important;
+}
+
+#assessmentPanel .block-left-menu-container {
+  z-index: 1000;
+  top: 20px;
+  bottom: 9px;
+  left: 15px;
+  position: absolute;
+  display: block;
+  opacity: 0.1;
+  border-radius: 5px;
+  -webkit-border-radius: 5px;
+}
+
+#assessmentPanel .previous-assessment-answer {
+  font-weight: bold;
+  margin-bottom: 10px;
+  margin-top: 5px;
+  color: var(--hot-link-color);
+}
+
+#assessmentPanel .ui-widget.ui-datepicker .ui-datepicker-calendar td a.ui-state-active {
+  background: #186ba0;
+}
+
+#assessmentPanel .general-assessment-print-header {
+  font-weight: bold;
+  color: black;
+}
+
+#assessmentPanel .dont-know {
+  background-color: #d9f2e6;
+  border-radius: 5px;
+  margin-bottom: .8em;
+}
+
+#assessmentPanel .spinner-info {
+  padding: .2em 0 1em 0;
+  color: #787878;
+}
+
+#assessmentPanel .ui-state-disabled,
+#assessmentPanel .ui-widget:disabled {
+  color: #C0C0C0;
+}
+
+#assessmentPanel .question-left-pad {
+    padding-left: 0.7em;
+}
+
+#assessmentPanel .question-paragraph {
+    /* display: inline-grid;  */
+    /* vertical-align: text-bottom; */
+}
+
+.assmnt-help-item-img {
+    padding-left: .4em;
+}
+
+#assessmentPageHeader .profile-header-row-item {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+#navigationButtonRow .previous-button {
+    margin-right: 0.8em; 
+    margin-top: .6em;
+}
+
+#navigationButtonRow .next-button {
+    margin-top: .6em;
+}
+
+.question-answer-is-bold {
+    font-weight: bold;
+}

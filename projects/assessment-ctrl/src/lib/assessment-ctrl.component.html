@@ -1,0 +1,202 @@
+<div style="width: 100%;">
+    <div class="panel panel-default page-content" id="assessmentPanel">
+
+        <p-confirmDialog [style]="{ width: '425px' }" acceptLabel="OK"></p-confirmDialog>
+
+        <div *ngIf="isAssessmentComplete && showAssessmentCompletedLabel">
+            <div class="assessment-complete" [innerHTML]="assessmentCompletedLabel"></div>
+        </div>
+
+        <div *ngIf="waitingLaunch">
+            <img src="assets/images/loading_small.gif"> {{loadingLabel}}...
+        </div>
+
+        <div *ngIf="apAssessmentDto?.question" style="background: var(--background-color)">
+            <div class="assessment-container" id="assessmentBody" *ngIf="!isLoading">
+
+                <div class="p-grid">
+                    <div class="p-col-12 question-left-pad">
+                        <span [innerHTML]="apAssessmentDto?.question?.questionText?.baseText" *ngIf="apAssessmentDto?.question?.questionText?.baseText" class="question-paragraph"></span>
+                        <span *ngIf="isRequired && apAssessmentDto?.question?.questionText?.baseText && apAssessmentDto?.answerList !== null && apAssessmentDto?.answerList !== undefined && apAssessmentDto?.answerList.length > 0" class="item-is-required"></span>
+                        <img src="assets/images/help_text.png" (click)="showHelpInformation(apAssessmentDto?.question?.helpText)"
+                            *ngIf="apAssessmentDto?.question?.helpText !== null && apAssessmentDto?.question?.helpText !== undefined" class="assmnt-help-item-img" />
+                        <img src="assets/images/help_text.png" (click)="showItemInfoText(apAssessmentDto?.question?.infoId, false)"
+                            *ngIf="apAssessmentDto?.question?.infoId !== null && apAssessmentDto?.question?.infoId !== undefined" class="assmnt-help-item-img" />
+                    </div>
+                </div>
+
+                <div id="assessmentQuestionContainer">
+
+                    <!-- multiple choice multi-select question -->
+                    <div *ngIf="apAssessmentDto?.question?.questionType !== null && apAssessmentDto?.question?.questionType !== undefined 
+                                && apAssessmentDto?.question?.questionType === 'MULTIPLE_CHOICE_MULTIPLE_SELECT'">
+                        <div class="previous-assessment-answer" *ngIf="showPreviousAnswer && (apAssessmentDto?.priorAnswerList !== null && apAssessmentDto?.priorAnswerList !== undefined && apAssessmentDto?.priorAnswerList.length > 0) 
+                                                                        && !(apAssessmentDto?.question?.responseUOM)">
+                            <div *ngFor="let priorAnswer of priorAssessmentAnswer; let i = index">- {{priorAnswer?.answerText?.baseText}}</div>
+                            <div>on {{priorAssessmentAnswer[0].assessmentCompletedDate}}</div>
+                        </div>
+                        <div *ngFor="let answer of apAssessmentDto?.answerList; let i = index">
+                            <p-checkbox name="multiple_choice_multiple_select" [value]="answer.answerId"
+                                [inputId]="'multiple_choice_multiple_select_' + i" (onChange)="handleNoneOfAbove($event, answer)"
+                                [(ngModel)]="providedAnswerList">
+                            </p-checkbox>
+                            <label [for]="'multiple_choice_multiple_select_' + i" [ngClass]="{'question-answer-is-bold':answer.isToBeBold}">
+                                {{answer.answerText?.baseText}}
+                            </label>
+                            <span *ngIf="answer?.helpText !== null && answer?.helpText !== undefined" class="assmnt-help-item-img">
+                                <img src="assets/images/help_text.png" (click)="showHelpInformation(answer.helpText)" />
+                            </span>
+                            <span *ngIf="answer?.infoId !== null && answer?.infoId !== undefined" class="assmnt-help-item-img">
+                                <img src="assets/images/help_text.png" (click)="showItemInfoText(answer.infoId, true)" />
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- multiple choice single select question -->
+                    <div *ngIf="apAssessmentDto?.question?.questionType !== null && apAssessmentDto?.question?.questionType !== undefined 
+                                && apAssessmentDto?.question?.questionType === 'MULTIPLE_CHOICE_SINGLE_SELECT'">
+                        <div class="previous-assessment-answer" *ngIf="showPreviousAnswer && (apAssessmentDto?.priorAnswerList !== null && apAssessmentDto?.priorAnswerList !== undefined && apAssessmentDto?.priorAnswerList.length > 0)">
+                            {{apAssessmentDto?.priorAnswerList[0]?.answerText?.baseText}} - {{apAssessmentDto?.priorAnswerList[0]?.assessmentCompletedDate}}
+                        </div>
+                        <div *ngFor="let answer of apAssessmentDto?.answerList; let i = index">
+                            <p-radioButton name="multiple_choice_single_select" [value]="answer.answerId"
+                                [inputId]="'multiple_choice_single_select_' + i" [(ngModel)]="providedAnswerList">
+                            </p-radioButton>
+                            <label [for]="'multiple_choice_single_select_' + i" [ngClass]="{'question-answer-is-bold':answer.isToBeBold}">
+                                {{answer?.answerText?.baseText}}
+                            </label>
+                            <span *ngIf="answer?.helpText !== null && answer?.helpText !== undefined" class="assmnt-help-item-img">
+                                <img src="assets/images/help_text.png" (click)="showHelpInformation(answer.helpText)"/>
+                            </span>
+                            <span *ngIf="answer?.infoId !== null && answer?.infoId !== undefined" class="assmnt-help-item-img">
+                                <img src="assets/images/help_text.png" (click)="showItemInfoText(answer.infoId, true)" />
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- free text question -->
+                    <div *ngIf="apAssessmentDto?.question?.questionType !== null && apAssessmentDto?.question?.questionType !== undefined 
+                                && apAssessmentDto?.question?.questionType === 'FREE_TEXT'
+                                && apAssessmentDto?.assessmentStatus !== 'READY_TO_SUBMIT'">
+                        <div class="previous-assessment-answer" *ngIf="showPreviousAnswer && (apAssessmentDto?.priorAnswerList !== null && apAssessmentDto?.priorAnswerList !== undefined && apAssessmentDto?.priorAnswerList.length > 0)">
+                            {{apAssessmentDto?.priorAnswerList[0]?.answerText?.baseText}} - {{apAssessmentDto?.priorAnswerList[0]?.assessmentCompletedDate}}
+                        </div>
+                        <textarea rows="5" cols="60" pTextarea [autoResize]="true" [(ngModel)]="providedAnswerText" maxlength="200"></textarea>
+                        <span *ngIf="apAssessmentDto?.question?.helpText !== null && apAssessmentDto?.question?.helpText !== undefined" class="assmnt-help-item-img">
+                            <img src="assets/images/help_text.png" (click)="showHelpInformation(apAssessmentDto.question.helpText)" />
+                        </span>
+                        <span *ngIf="apAssessmentDto?.question?.infoId !== null && apAssessmentDto?.question?.infoId !== undefined" class="assmnt-help-item-img">
+                            <img src="assets/images/help_text.png" (click)="showItemInfoText(apAssessmentDto.question.infoId, true)" />
+                        </span>
+                    </div>
+
+                    <!-- Value Entry Question: Weight -->
+                    <div *ngIf="apAssessmentDto?.question?.questionType !== null && apAssessmentDto?.question?.questionType !== undefined 
+                                && apAssessmentDto?.question?.questionType === 'VALUEENTRY_WEIGHT' 
+                                && apAssessmentDto?.assessmentStatus !== 'READY_TO_SUBMIT'">
+                        <div class="previous-assessment-answer" *ngIf="showPreviousAnswer && (apAssessmentDto?.priorAnswerList !== null && apAssessmentDto?.priorAnswerList !== undefined && apAssessmentDto?.priorAnswerList.length > 0)">
+                            {{apAssessmentDto?.priorAnswerList[0]?.answerText?.baseText}} - {{apAssessmentDto?.priorAnswerList[0]?.assessmentCompletedDate}}
+                        </div>
+                        <p-inputNumber [inputStyle]="{'width': '6rem'}" [min]="0" [max]="499" [showButtons]="true" [(ngModel)]="providedAnswerText"  [disabled]="disableQuestion"  (ngModelChange)="changeWeightSpinnerValue()" >
+                        </p-inputNumber>&nbsp;&nbsp;{{translateToSpanish(apAssessmentDto?.question?.responseUOM[0].uom)}}
+                        <div class="spinner-info">{{apAssessmentDto?.question?.responseUOM[0].value_minimum}}-{{apAssessmentDto?.question?.responseUOM[0].value_maximum}}&nbsp;{{minmaxLabel}}
+                            <br /> {{decimalsLabel}}
+                        </div>
+                        <span *ngIf="apAssessmentDto?.question?.helpText !== null && apAssessmentDto?.question?.helpText !== undefined" class="assmnt-help-item-img">
+                            <img src="assets/images/help_text.png" (click)="showHelpInformation(apAssessmentDto.question.helpText)" />
+                        </span>
+                        <span *ngIf="apAssessmentDto?.question?.infoId !== null && apAssessmentDto?.question?.infoId !== undefined" class="assmnt-help-item-img">
+                            <img src="assets/images/help_text.png" (click)="showItemInfoText(apAssessmentDto.question.infoId, true)" />
+                        </span>
+                    </div>
+
+                    <!-- Value Entry Question: Height -->
+                    <div *ngIf="apAssessmentDto?.question?.questionType !== null && apAssessmentDto?.question?.questionType !== undefined 
+                                && apAssessmentDto?.question?.questionType === 'VALUEENTRY_HEIGHT' 
+                                && apAssessmentDto?.assessmentStatus !== 'READY_TO_SUBMIT'">
+                        <div class="previous-assessment-answer" *ngIf="showPreviousAnswer && (apAssessmentDto?.priorAnswerList !== null && apAssessmentDto?.priorAnswerList !== undefined && apAssessmentDto?.priorAnswerList.length > 0)">
+                            {{apAssessmentDto?.priorAnswerList[0]?.answerText?.baseText}} - {{apAssessmentDto?.priorAnswerList[0]?.assessmentCompletedDate}}
+                        </div>
+                        <p-inputNumber [inputStyle]="{'width': '6rem'}" [min]="0" [max]="9" [showButtons]="true" [(ngModel)]="providedFeet"  [disabled]="disableQuestion" (ngModelChange)="changeHeightSpinnerValue()" >
+                        </p-inputNumber>&nbsp;&nbsp;{{translateToSpanish(apAssessmentDto?.question?.responseUOM[0].uom)}}
+                        <div class="spinner-info">{{apAssessmentDto?.question?.responseUOM[0].value_minimum}}-{{apAssessmentDto?.question?.responseUOM[0].value_maximum}}&nbsp;{{minmaxLabel}}</div>
+
+                        <p-inputNumber [inputStyle]="{'width': '6rem'}" [min]="0" [max]="11" [showButtons]="true" [(ngModel)]="providedInches"  [disabled]="disableQuestion" (ngModelChange)="changeHeightSpinnerValue()" >
+                        </p-inputNumber>&nbsp;&nbsp;{{translateToSpanish(apAssessmentDto?.question?.responseUOM[1].uom)}}
+
+                        <div class="spinner-info">{{apAssessmentDto?.question?.responseUOM[1].value_minimum}}-{{apAssessmentDto?.question?.responseUOM[1].value_maximum}}&nbsp;{{minmaxLabel}}
+                            <br/>{{decimalsLabel}}
+                        </div>
+
+                        <span *ngIf="apAssessmentDto?.question?.helpText !== null && apAssessmentDto?.question?.helpText !== undefined" class="assmnt-help-item-img">
+                            <img src="assets/images/help_text.png" (click)="showHelpInformation(apAssessmentDto.question.helpText)" />
+                        </span>
+                        <span *ngIf="apAssessmentDto?.question?.infoId !== null && apAssessmentDto?.question?.infoId !== undefined" class="assmnt-help-item-img">
+                            <img src="assets/images/help_text.png" (click)="showItemInfoText(apAssessmentDto.question.infoId, true)" />
+                        </span>
+                    </div>
+
+                    <!-- special treatment: don't know answer -->
+                    <div *ngIf="apAssessmentDto?.question?.hasDontKnowAnswer 
+                                && apAssessmentDto?.question?.questionType !== null && apAssessmentDto?.question?.questionType !== undefined 
+                                && apAssessmentDto?.question?.questionType !== 'MULTIPLE_CHOICE_SINGLE_SELECT'">
+
+                        <p-radioButton name="height_weight_options" value="dontKnowAnswerValue" inputId="height_weight_options_dont_know"
+                            [disabled]="hasDontKnowAnswerDisabled" (onClick)="disableEnableQuestion($event)"
+                            [(ngModel)]="dontKnowDeclineAnswerValue">
+                        </p-radioButton>
+                        <label for="height_weight_options_dont_know">{{dontKnowLabel}}</label>
+                    </div>
+
+                    <!-- special treatment: decline answer -->
+                    <div *ngIf="apAssessmentDto?.question?.hasDeclineAnswer 
+                                                    && apAssessmentDto?.question?.questionType !== null && apAssessmentDto?.question?.questionType !== undefined 
+                                                    && apAssessmentDto?.question?.questionType !== 'MULTIPLE_CHOICE_SINGLE_SELECT'">
+
+                        <p-radioButton name="height_weight_options" value="declineAnswerValue" inputId="height_weight_options_decline"
+                            [disabled]="hasDeclineAnswerDisabled" (onClick)="disableEnableQuestion($event)"
+                            [(ngModel)]="dontKnowDeclineAnswerValue">
+                        </p-radioButton>
+                        <label for="height_weight_options_decline">{{declineLabel}}</label>
+                    </div>
+
+                    <!-- value Entry Question : datepicker -->
+                    <div *ngIf="apAssessmentDto?.question?.questionType !== null && apAssessmentDto?.question?.questionType !== undefined 
+                                && apAssessmentDto?.question?.questionType === 'VALUEENTRY_DATE' 
+                                && apAssessmentDto?.assessmentStatus !== 'READY_TO_SUBMIT'" [style.margin-bottom]="setMargin">
+                        <div class="previous-assessment-answer" *ngIf="showPreviousAnswer && (apAssessmentDto?.priorAnswerList !== null && apAssessmentDto?.priorAnswerList !== undefined && apAssessmentDto?.priorAnswerList.length > 0)">
+                            {{apAssessmentDto?.priorAnswerList[0]?.answerText?.baseText}} - {{apAssessmentDto?.priorAnswerList[0]?.assessmentCompletedDate}}
+                        </div>
+                        <p-calendar [(ngModel)]="pcpAppointmentDate" dateFormat="mm/dd/yy" (click)="alignCalendar(true)"
+                            (onSelect)="alignCalendar(false)" [yearRange]="getFullYearRange()">
+                        </p-calendar>
+                    </div>
+                </div>
+                
+                <div *ngIf="!isAssessmentComplete" id="navigationButtonRow">
+                            <button pButton type="button" [label]="previousLabel" (click)="getPreviousQuestion()" class="previous-button"
+                        *ngIf="!isLoading && apAssessmentDto?.assessmentStatus !== 'START' && apAssessmentDto?.assessmentStatus !== 'COMPLETE' 
+                                && apAssessmentDto?.nodeId !== nodeIdOfFirstQuestion">
+                    </button>
+                            <button pButton type="button" [label]="nextLabel" (click)="getNextQuestion()" class="next-button"
+                            [disabled]="isLoading || apAssessmentDto?.assessmentStatus === 'READY_TO_SUBMIT' || apAssessmentDto?.assessmentStatus === 'COMPLETE'">
+                    </button>
+                </div>
+            </div>
+            <div class="assessment-container" *ngIf="isLoading">
+                <div class="">
+                    <img src="assets/images/loading_small.gif"> {{loadingLabel}}...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<p-dialog [header]="helpDialogTitleLabel" [(visible)]="showHelpDialog" class="displayHelpText" [style]="{'box-shadow':'0px 0px 8px 2px #282828','width':'700px'}">
+
+    <p [innerHTML]="showHelpText"></p>
+    <div style="padding-top: 1em; float: right;">
+        <button pButton type="button" label="Close" (click)="showHelpDialog=!showHelpDialog"></button>
+    </div>
+
+</p-dialog>
