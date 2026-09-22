@@ -196,6 +196,26 @@ Then:
 
 ## When things go wrong
 
+**`sh: 1: ng: Permission denied`**
+`node_modules/.bin/ng` lost its execute bit, or the disk is mounted `noexec`.
+This happens when `node_modules` is copied from another machine, unzipped from an
+archive, or installed by a different user than the one running the build. Run the
+CLI through `node` instead — it works either way, because nothing is being
+executed directly:
+```bash
+node node_modules/@angular/cli/bin/ng.js build assessment-ctrl --configuration production
+```
+To fix it properly so plain `npx ng` works again:
+```bash
+chmod +x node_modules/.bin/*
+```
+If that still fails, the exec bit was never the problem — reinstall as the user
+who will run the build:
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
 **"Cannot find module 'assessment-ctrl'"**
 Step 2 was skipped or failed. Build the library, then try again.
 
