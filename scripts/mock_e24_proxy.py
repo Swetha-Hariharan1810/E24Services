@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.8"
+# dependencies = []
+# ///
 """A local stand-in for the deployed `api/E24Proxy` service.
 
 WHY THIS EXISTS
@@ -12,6 +16,12 @@ So if you want to exercise the client without a real backend (no VPN, no
 Expert24 credentials, no Clinical Content Service checkout), run this instead.
 It implements the same eight routes with the same verbs and the same response
 shapes, and it serves a small three-question assessment.
+
+It serves Expert24's own `/webbuilder/TraversalService/*` routes too, which is
+what the control calls in direct mode and what `scripts/e24_direct_client.py`
+talks to. So the same process stands in for either side, and it can also be the
+`target` in `proxy.config.json` when you want the UI working with no network at
+all.
 
     python3 scripts/mock_e24_proxy.py
     ./scripts/e24_proxy_client.py smoke --base-url http://127.0.0.1:8099 \
@@ -38,6 +48,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 API_ROOT = "/api/E24Proxy"
+DIRECT_ROOT = "/webbuilder/TraversalService"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8099
 
@@ -193,8 +204,53 @@ class Handler(BaseHTTPRequestHandler):
             print(line, flush=True)
 
     def _route(self, method, path, query, body):
-        # Every route on the real service requires this. Rejecting without it
-        # is the whole point of the mock: it catches a client that forgets.
+        if path.startswith(DIRECT_ROOT):
+            return self._route_direct(method, path, body)
+        return self._route_proxy(method, path, query, body)
+
+    def _route_direct(self, method, path, body):
+        """Expert24's own TraversalService, as the control calls it in direct mode.
+
+        No expert24urlBase here - that parameter exists only so the Clinical
+        Content Service knows which Expert24 to forward to. Talking to Expert24
+        itself, there is nothing to forward.
+        """
+        if path == f"{DIRECT_ROOT}/Member" and method == "POST":
+            payload = _parse_json(body)
+            if payload is None:
+                return self._send({"Error": "request body is not valid JSON"}, 400)
+            # The control sends {"@UserID": ..., "callback": "raw", "Prepop": {...}}.
+            if not payload.get("@UserID"):
+                return self._send({"Error": "@UserID is required"}, 400)
+            return self._send(START_RESPONSE)
+
+        if re.match(rf"^{DIRECT_ROOT}/First/[^/]+/[^/]+/[^/]+/\d+$", path) and method == "POST":
+            return self._send(FLOW[1])
+
+        match = re.match(rf"^{DIRECT_ROOT}/Next/[^/]+/[^/]+/[^/]+/(\d+)$", path)
+        if match and method == "POST":
+            return self._send(FLOW.get(int(match.group(1)) + 1, COMPLETED))
+
+        if re.match(rf"^{DIRECT_ROOT}/Previous/[^/]+$", path) and method == "GET":
+            return self._send(FLOW[1])
+
+        if re.match(rf"^{DIRECT_ROOT}/Prepop/[^/]+/[^/]+$", path) and method == "POST":
+            return self._send(START_RESPONSE)
+
+        if re.match(rf"^{DIRECT_ROOT}/GoBack/[^/]+/[^/]+/\d+/-?\d+$", path) and method == "GET":
+            return self._send(FLOW[2])
+
+        if re.match(rf"^{DIRECT_ROOT}/Info/[^/]+/\d+/\d+$", path) and method == "GET":
+            return self._send(INFO_RESPONSE)
+
+        if re.match(rf"^{DIRECT_ROOT}/QA/[^/]+$", path) and method == "GET":
+            return self._send(QA_RESPONSE)
+
+        return self._send({"Error": "no such route", "Path": path, "Method": method}, 404)
+
+    def _route_proxy(self, method, path, query, body):
+        # Every proxy route on the real service requires this. Rejecting without
+        # it is the whole point of the mock: it catches a client that forgets.
         if "expert24urlBase" not in query:
             return self._send(
                 {"Error": "expert24urlBase query parameter is required"}, 400

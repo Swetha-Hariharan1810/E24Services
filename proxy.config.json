@@ -1,0 +1,8 @@
+{
+  "/webbuilder": {
+    "target": "https://aph-uat.expert-24.net",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}

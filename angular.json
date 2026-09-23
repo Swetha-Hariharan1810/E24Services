@@ -118,7 +118,8 @@
         "serve": {
             "builder": "@angular-devkit/build-angular:dev-server",
             "options": {
-              "buildTarget": "assessment-ctrl-tester:build"
+              "buildTarget": "assessment-ctrl-tester:build",
+              "proxyConfig": "proxy.config.json"
             },
             "configurations": {
               "production": {
