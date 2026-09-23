@@ -492,6 +492,9 @@ curl "$B/GoBack/cd6ed911-5ba5-40ac-a72d-ad3650516b50/1492375/0/-1"
 
 ## 6. The easy way: the Python script
 
+(Prefer clicking to typing? See [`POSTMAN_README.md`](POSTMAN_README.md) for the
+same calls step by step in Postman.)
+
 `scripts/e24_direct_client.py` does all of the above for you. It uses only
 standard Python (3.8+), so there's **nothing to install** and no virtual
 environment is needed.
