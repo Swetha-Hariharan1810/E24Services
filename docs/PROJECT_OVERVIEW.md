@@ -34,7 +34,30 @@ Plus two Word specifications that describe the same system from the
 integration/API side:
 
 - `Assessment Control Integration-v3.docx` — how to embed the control in an Angular app.
-- `Assessment Expert24 Proxy Integration-v1.docx` — how to talk to the backend proxy directly, without the control.
+- `Assessment Expert24 Proxy Integration-v1.docx` — describes the Sagility backend
+  proxy (`api/E24Proxy`). **That backend is not in this repository and is not
+  available to us today** — see the status box below.
+
+> ### ⚠️ Current status: we do NOT have the `api/E24Proxy` backend
+>
+> The control can talk to Expert24 in two ways: through a Sagility backend proxy
+> (`api/E24Proxy`), or directly. **Only the direct route works for us right now.**
+>
+> | Piece | In this repo? | Usable today? |
+> | --- | --- | --- |
+> | `api/E24Proxy` backend (ASP.NET, Clinical Content Service) | **No** — lives in a separate repo we don't have | **No** |
+> | `E24ProxyHttpService` — the Angular *client* that would call that backend | Yes | Only against the mock below |
+> | `proxy.config.json` — the Angular dev-server proxy that forwards `/webbuilder/*` to Expert24 UAT | Yes | **Yes** — this is what we actually use |
+> | `scripts/mock_e24_proxy.py` — a fake `api/E24Proxy` with canned answers | Yes | Yes, for offline testing only |
+>
+> Although it contains the word "proxy", `proxy.config.json` is **not** the
+> `api/E24Proxy` backend. It's a development-only feature of `ng serve` that
+> forwards requests straight to Expert24, so the control is running in **direct mode**.
+> How to set it up is in [`RUNNING_LOCALLY.md`](RUNNING_LOCALLY.md) under
+> *Making Mode B work locally*.
+>
+> Anything in this document about "proxy mode" describes the **intended**
+> production design from the Word spec, not something we can run.
 
 ---
 
@@ -78,27 +101,46 @@ handful of inputs, and listens for one "assessment is complete" event.
               ┌─────────────────┴──────────────────┐
               │                                    │
    ┌──────────▼───────────┐             ┌──────────▼─────────────┐
-   │ Clinical Content     │             │  Expert24 cloud APIs   │
-   │ Service              │  ────────▶  │  /webbuilder/          │
-   │  api/E24Proxy/*      │  forwards   │   TraversalService/*   │
-   │  (separate repo)     │             │  (England)             │
-   └──────────────────────┘             └────────────────────────┘
-        "proxy mode"                          "direct mode"
+   │ Clinical Content     │             │ ng serve dev-server    │
+   │ Service              │             │ proxy (localhost:4200) │
+   │  api/E24Proxy/*      │             │ proxy.config.json      │
+   │ ✗ NOT IN THIS REPO   │             │ ✓ WHAT WE USE TODAY    │
+   │ ✗ NOT AVAILABLE      │             │   (dev only)           │
+   └──────────┬───────────┘             └──────────┬─────────────┘
+              │ forwards                           │ forwards
+              └─────────────────┬──────────────────┘
+                     ┌──────────▼─────────────┐
+                     │  Expert24 cloud APIs   │
+                     │  /webbuilder/          │
+                     │   TraversalService/*   │
+                     │  (England)             │
+                     └────────────────────────┘
+      "proxy mode"                          "direct mode"
+   (intended design)                      (current reality)
 ```
 
 Two routes to the same destination:
 
-- **Proxy mode** — the control calls a Sagility-hosted backend (`api/E24Proxy/...`)
-  which forwards the request to Expert24. This is the normal production route: it
-  keeps Expert24 credentials/endpoints server-side, gives one place to log and
-  secure traffic, and avoids browser cross-origin problems.
-- **Direct mode** — the control calls Expert24's `/webbuilder/TraversalService/...`
-  endpoints straight from the browser. Useful for development and diagnosis.
+- **Proxy mode — the intended production design, but not available to us.** The
+  control calls a Sagility-hosted backend (`api/E24Proxy/...`) which forwards the
+  request to Expert24. The Word spec describes this as the production route: it
+  keeps Expert24 credentials and endpoints on the server, gives one place to log and
+  secure traffic, and avoids browser cross-origin problems. The backend lives in
+  the Clinical Content Service repo
+  (`/source/Components/ClinicalContent/ContentService`), which is **not part of
+  this repository and which we do not currently have**. This repository contains
+  only the *client* side (`E24ProxyHttpService`) and a mock
+  (`scripts/mock_e24_proxy.py`) for testing it.
+- **Direct mode — what actually works today.** The control calls Expert24's
+  `/webbuilder/TraversalService/...` endpoints itself. From a browser this is
+  normally blocked by CORS, so during development we route it through the Angular
+  dev server: `proxy.config.json` forwards `/webbuilder/*` from `localhost:4200`
+  to `https://aph-uat.expert-24.net`. This only works while `ng serve` is running,
+  so a deployed build can't use it.
 
-**Important:** the `api/E24Proxy` backend is *not* in this repository. The Word
-specs place it in the Clinical Content Service repo
-(`/source/Components/ClinicalContent/ContentService`). This repository only
-contains the client that calls it.
+**How to tell the two "proxies" apart:** `api/E24Proxy` is the Sagility backend
+we don't have. `proxy.config.json` is a setting for Angular's own dev server that
+passes requests straight through to Expert24. They share a name but are unrelated.
 
 ---
 
@@ -127,12 +169,22 @@ E24Services/
 ├── tslint.json                   Linting rules (legacy TSLint)
 ├── README.md                     Build + deploy cheat-sheet
 ├── AssessmentControl.code-workspace
+├── proxy.config.json             ng serve dev-server proxy: /webbuilder → Expert24 UAT
+│                                 (NOT the api/E24Proxy backend)
 │
 ├── Assessment Control Integration-v3.docx        Integration spec
-├── Assessment Expert24 Proxy Integration-v1.docx Proxy/API spec
+├── Assessment Expert24 Proxy Integration-v1.docx Spec for the api/E24Proxy
+│                                                 backend (not in this repo)
 │
 ├── docs/
-│   └── PROJECT_OVERVIEW.md       ← this file
+│   ├── PROJECT_OVERVIEW.md       ← this file
+│   ├── RUNNING_LOCALLY.md        Local setup, the three run modes, troubleshooting
+│   └── DEPLOYMENT.md             Shipping the control
+│
+├── scripts/                      Command-line API tools (Python, stdlib only)
+│   ├── e24_direct_client.py      Talks to Expert24 /webbuilder directly
+│   ├── e24_proxy_client.py       Talks to an api/E24Proxy backend (only the mock today)
+│   └── mock_e24_proxy.py         Fake api/E24Proxy + /webbuilder with canned answers
 │
 └── projects/
     ├── assessment-ctrl/                    THE LIBRARY (the product)
@@ -149,7 +201,7 @@ E24Services/
     │           ├── assessment-ctrl.module.ts       NgModule wiring
     │           ├── assessment-api-client.ts        Interface + DI tokens
     │           ├── e24-http.service.ts             Direct-to-Expert24 calls
-    │           ├── e24-proxy-http.service.ts       Calls via api/E24Proxy
+    │           ├── e24-proxy-http.service.ts       Client for api/E24Proxy (backend not in repo)
     │           ├── e24-mapper.service.ts           E24 payload → asset model
     │           ├── assessment-mapper.service.ts    Asset model → UI model
     │           ├── e24.dtos.ts                     Expert24 wire shapes
@@ -258,10 +310,15 @@ Expert24 operations.
 It also normalises language for Expert24's benefit: `spa`/`spanish` → `SPANISH`,
 anything else → `MEMBER`.
 
-**`E24ProxyHttpService` (via the backend)** calls the Sagility proxy under
-`/api/E24Proxy`, URL-encoding every path segment and appending
+It's the service used in the working setup today, with `proxy.config.json`
+forwarding its `/webbuilder` calls to Expert24.
+
+**`E24ProxyHttpService` (via the backend — client only)** is written to call the
+Sagility proxy under `/api/E24Proxy`, URL-encoding every path segment and appending
 `?expert24urlBase=<encoded e24UrlBase>` so the backend knows which Expert24
-environment to forward to:
+environment to forward to. The code is complete, but **the backend it calls is not
+in this repository and we don't have access to it**. For now the only thing it can
+talk to is `scripts/mock_e24_proxy.py`.
 
 | Method | Proxy route |
 | --- | --- |
@@ -274,10 +331,11 @@ environment to forward to:
 | `getItemInfoText` | `GET /api/E24Proxy/info/{traversalId}/{noteType}/{itemId}` |
 | `getPostCompleteData` | `GET /api/E24Proxy/qa/{traversalId}` |
 
-The proxy sends structured JSON bodies (`{ MemberId, Prepop }`) and preserves the
-upstream status code, body and content type on the way back. It also parses the
-prepop string defensively — malformed JSON logs a warning and sends `{}` rather
-than throwing.
+The client sends structured JSON bodies (`{ MemberId, Prepop }`) and parses the
+prepop string defensively: if the JSON is malformed it logs a message and sends
+`{}` instead of throwing. (The Word spec also says the *backend* passes Expert24's
+status code, body and content type back unchanged. That describes the missing
+service, so we can't verify it from this repo.)
 
 ### 6.4 The two mapper services — why there are two
 
@@ -355,7 +413,12 @@ Useful details:
 - **"Use Expert24 Direct APIs" checkbox** switches between direct and proxy mode.
   When it is ticked, the tester hides the Sagility service URL field and points
   `webserviceUrlBase` at `e24UrlBase`; when unticked it restores the previously
-  typed Sagility URL.
+  typed Sagility URL. **It starts unticked (proxy mode), which fails for us** because
+  nothing is running at `localhost:9991`. To get real questions, tick it and set
+  **Expert24 URL Base** to `http://localhost:4200` so requests go through
+  `proxy.config.json`. To test without any backend, leave it unticked, run
+  `python3 scripts/mock_e24_proxy.py`, and point the Sagility URL at
+  `http://127.0.0.1:8099`.
 - **Assessment dropdown** is a hand-maintained list of algorithm IDs (Check In
   With Us `10798`, Healthy Aging Member Satisfaction Survey `10657`, Healthy Aging
   Assessment `10583`, Member Health Preference `10591`, Care Manager Initial
@@ -363,8 +426,9 @@ Useful details:
   list, so it must be updated by hand as content changes.
 - **Restart Assessment** tears the control down, waits one second on an RxJS
   `timer`, and re-creates it — a clean way to force a fresh `ngOnInit`.
-- **Defaults** point at `http://localhost:9991` for the Sagility service and
-  `https://aph-uat.expert-24.net` for Expert24 UAT, with a sample prepop payload.
+- **Defaults** point at `http://localhost:9991` for the Sagility service (where the
+  missing Clinical Content Service would run) and `https://aph-uat.expert-24.net`
+  for Expert24 UAT, with a sample prepop payload.
 - Errors emitted by the control are flattened into a red banner at the top left.
 
 ---
@@ -560,5 +624,7 @@ about the current code, not instructions to change it.
 | Change how a question renders | `assessment-ctrl.component.html` + `QUESTION_TYPE` in `assessment-ctrl.dtos.ts` |
 | Debug a wrong-looking question | `e24-mapper.service.ts` first, then `assessment-mapper.service.ts` |
 | Change an endpoint | `e24-proxy-http.service.ts` (proxy) or `e24-http.service.ts` (direct) |
-| Build the backend, or call it without the control | `Assessment Expert24 Proxy Integration-v1.docx` — the proxy lives in the Clinical Content Service repo |
+| Run it locally against real Expert24 | `docs/RUNNING_LOCALLY.md` → *Making Mode B work locally* (`proxy.config.json`) |
+| Test with no backend at all | `scripts/mock_e24_proxy.py` and `scripts/README.md` |
+| Understand the `api/E24Proxy` backend | `Assessment Expert24 Proxy Integration-v1.docx`. It's a spec only: the code lives in the Clinical Content Service repo, which we don't have |
 | Ship a new version | root `README.md`, deploy section |
